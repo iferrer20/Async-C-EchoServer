@@ -4,6 +4,9 @@
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/socket.h> 
 #include "epoll_loop.h"
 
 
@@ -22,7 +25,7 @@ void start_server() {
         exit(EXIT_FAILURE);
         
     }
-    fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK); // Nonblocking
+    fcntl(server_fd, F_SETFL, fcntl(server_fd, F_GETFL, 0) | O_NONBLOCK); // Nonblocking
        
     // Forcefully attaching socket to the port 8080 
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
@@ -41,8 +44,8 @@ void start_server() {
     if (listen(server_fd, 3) < 0) { 
         perror("listen"); 
         exit(EXIT_FAILURE); 
-    } 
-    epoll_ctl(loop, EPOLL_CTL_ADD, sockfd, &event);
+    }
+    epoll_ctl(loop->ready_polls, EPOLL_CTL_ADD, server_fd, &event);
     // if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) { 
     //     perror("accept"); 
     //     exit(EXIT_FAILURE); 
