@@ -41,10 +41,12 @@ void run_loop(struct epoll_loop* loop) {
                     if (!read_poll(data)) {
                         close(data->fd);
                         remove_poll(loop, &poll);
+                        printf("A client left\n");
+                    } else {
+                        printf(data->buff + data->last_buff_size);
                     }
                 }
             }
-            
         }
     }
 }
@@ -71,5 +73,4 @@ void remove_poll(struct epoll_loop* loop, struct epoll_event* poll) {
     epoll_ctl(loop->epoll, EPOLL_CTL_DEL, ((struct poll_data*) (poll->data.ptr))->fd, NULL);
     loop->num_polls--;
     free(poll->data.ptr);
-    printf("A client left\n");
 }

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
 int accept_conn(int fd, struct sockaddr_in* address) {
     int addrlen = sizeof(struct sockaddr_in);
     int new_fd = accept(fd, (struct sockaddr *)address, (socklen_t*)&addrlen);
@@ -22,7 +21,6 @@ int read_poll(struct poll_data* data) {
     }
     memcpy(data->buff + data->buff_size, recv_buff, recv_size);
     data->buff[recv_size + data->buff_size] = 0;
-    printf(data->buff);
     data->last_buff_size = data->buff_size;
     data->buff_size += recv_size;
     return recv_size;
