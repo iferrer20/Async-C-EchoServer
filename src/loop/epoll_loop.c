@@ -38,7 +38,7 @@ void run_loop(struct epoll_loop* loop) {
                 }
             } else if(type == POLL_CONN) {
                 if (events & EPOLLIN) {
-                    if (!read_poll(data)) {
+                    if (!read_poll(&poll)) {
                         close(data->fd);
                         remove_poll(loop, &poll);
                         printf("A client left\n");
@@ -60,6 +60,7 @@ struct epoll_event create_poll(int fd, int type) {
     pd->type = type;
     pd->buff = NULL;
     pd->buff_size = 0;
+    pd->last_buff_size = 0;
 
     poll.data.ptr = pd;
     return poll;
