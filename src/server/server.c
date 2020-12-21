@@ -1,4 +1,8 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "server.h"
 #include "../loop/epoll_loop.h"
@@ -12,8 +16,6 @@ struct server* create_server(struct server_config* sv_conf) {
 
 int run_server(struct server* sv) {
     int opt = 1; 
-    int addrlen = sizeof(struct sockaddr_in);
-    
     struct epoll_loop* loop = create_loop();
     
     // Creating socket file descriptor 
@@ -43,7 +45,8 @@ int run_server(struct server* sv) {
         return 1;
     }
     loop->sv = sv;
-    add_poll(loop, sv->fd, POLL_BIND);
+    struct epoll_event new_poll = create_poll(sv->fd, POLL_BIND);
+    add_poll(loop, &new_poll);
     run_loop(loop);
     return 0;
 }

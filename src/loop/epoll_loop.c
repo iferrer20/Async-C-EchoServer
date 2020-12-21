@@ -3,41 +3,45 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 struct epoll_loop* create_loop() {
     struct epoll_loop *loop = (struct epoll_loop*) malloc(sizeof(struct epoll_loop)); // Create new epoll_loop
     loop->num_polls = 0;
     loop->num_ready_polls = 0;
     loop->current_ready_poll = 0;
-    loop->fd = epoll_create1(0);
+    loop->epoll = epoll_create1(0);
     return loop;
 }
 
 void run_loop(struct epoll_loop* loop) {
     while (loop->num_polls) {
-        loop->num_ready_polls = epoll_wait(loop->fd, loop->ready_polls, 1024, -1);
-        
+        loop->num_ready_polls = epoll_wait(loop->epoll, loop->ready_polls, 1024, -1);
         for (loop->current_ready_poll = 0; loop->current_ready_poll < loop->num_ready_polls; loop->current_ready_poll++) {
-            int events = loop->ready_polls[loop->current_ready_poll].events;
-            struct poll_data* data = &loop->ready_polls[loop->current_ready_poll].data.u64;
-            
+            struct epoll_event poll = loop->ready_polls[loop->current_ready_poll];
+            int events = poll.events;
+            struct poll_data* data = poll.data.ptr;
             int type = data->type;
-            int fd = data->fd;
 
+            // int error = events & (EPOLLERR | EPOLLHUP);
+            // if (error) {
+            //     printf("err\n");
+            //     continue;
+            // }
+            
             if (type == POLL_BIND) {
-                printf("testing\n");
                 if (events & EPOLLIN) {
                     int conn_fd = accept_conn(loop->sv->fd, &loop->sv->listen_addr_sock);
-                    //printf("poll_bind: %d\n", conn_fd);
-                    add_poll(loop, conn_fd, POLL_CONN);
-                    char hello[] = "hello";
-                    send(conn_fd, hello, sizeof(hello), 0);
+                    printf("New client\n");
+                    struct epoll_event new_poll = create_poll(conn_fd, POLL_CONN);
+                    add_poll(loop, &new_poll);
                 }
             } else if(type == POLL_CONN) {
-                
-                //printf("poll_conn: %d\n", loop->num_ready_polls);
                 if (events & EPOLLIN) {
-                    close(fd);
+                    if (!read_poll(data)) {
+                        close(data->fd);
+                        remove_poll(loop, &poll);
+                    }
                 }
             }
             
@@ -45,18 +49,27 @@ void run_loop(struct epoll_loop* loop) {
     }
 }
 
+struct epoll_event create_poll(int fd, int type) {
+    struct epoll_event poll;
+    poll.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
 
+    struct poll_data* pd = (struct poll_data*) malloc(sizeof(struct poll_data));
+    pd->fd = fd;
+    pd->type = type;
+    pd->buff = NULL;
+    pd->buff_size = 0;
 
-void add_poll(struct epoll_loop* loop, int socket, int type) {
-    struct epoll_event event;
-    struct poll_data pd;
-    event.events = EPOLLIN | EPOLLOUT;
-    pd.fd = socket;
-    pd.type = type;
+    poll.data.ptr = pd;
+    return poll;
+}
 
-    struct poll_data* buff = &event.data.u64;
-    *buff = pd;
-
-    epoll_ctl(loop->fd, EPOLL_CTL_ADD, socket, &event);
+void add_poll(struct epoll_loop* loop, struct epoll_event* poll) {
+    epoll_ctl(loop->epoll, EPOLL_CTL_ADD, ((struct poll_data*) (poll->data.ptr))->fd, (struct epoll_event*) &poll->events);
     loop->num_polls++;
+}
+void remove_poll(struct epoll_loop* loop, struct epoll_event* poll) {
+    epoll_ctl(loop->epoll, EPOLL_CTL_DEL, ((struct poll_data*) (poll->data.ptr))->fd, NULL);
+    loop->num_polls--;
+    free(poll->data.ptr);
+    printf("A client left\n");
 }
