@@ -73,5 +73,6 @@ void add_poll(struct epoll_loop* loop, struct epoll_event* poll) {
 void remove_poll(struct epoll_loop* loop, struct epoll_event* poll) {
     epoll_ctl(loop->epoll, EPOLL_CTL_DEL, ((struct poll_data*) (poll->data.ptr))->fd, NULL);
     loop->num_polls--;
+    free(((struct poll_data*) (poll->data.ptr))->buff);
     free(poll->data.ptr);
 }
