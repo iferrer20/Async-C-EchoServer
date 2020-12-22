@@ -38,12 +38,12 @@ void run_loop(struct epoll_loop* loop) {
                 }
             } else if(type == POLL_CONN) {
                 if (events & EPOLLIN) {
-                    if (!read_poll(&poll)) {
+                    if (!read_poll(loop, &poll)) {
                         close(data->fd);
                         remove_poll(loop, &poll);
                         printf("A client left\n");
                     } else {
-                        //printf(data->buff + data->last_buff_size);
+                        printf(loop->buff);
                     }
                 }
             }
@@ -66,19 +66,13 @@ struct epoll_event create_poll(int fd, int type) {
     return poll;
 }
 int read_poll(struct epoll_loop* loop, struct epoll_event* poll) { // Read incoming data
-    char recv_buff[1024];
     struct poll_data* data = poll->data.ptr;
 
-    int recv_size = recv(data->fd, recv_buff, sizeof(recv_buff), 0); // Recv data in recv_buff and set size in recv_size
-    if (loop->buff) { 
-        if (recv_size < 4096) {
-            memcpy(loop->buff + data->buff_size, recv_buff, recv_size); // Copy incoming data to poll_data buffer
-        }
-        loop->buff = realloc(loop->buff, data->buff_size + recv_size + 1); // Reallocate buffer for insert incoming data
-    } else {
-        loop->buff = malloc(4096); // First malloc
-    }
-    //data->buff[data->buff_size + recv_size] = 0;
+    if (!loop->buff) { 
+        loop->buff = malloc(4096 + 1); // First malloc
+    } 
+    int recv_size = recv(data->fd, loop->buff, 4096, 0); // Recv data in recv_buff and set size in recv_size
+    loop->buff[recv_size] = 0;
     data->last_buff_size = data->buff_size;
     data->buff_size += recv_size;
     return recv_size; 
@@ -91,6 +85,5 @@ void add_poll(struct epoll_loop* loop, struct epoll_event* poll) {
 void remove_poll(struct epoll_loop* loop, struct epoll_event* poll) {
     epoll_ctl(loop->epoll, EPOLL_CTL_DEL, ((struct poll_data*) (poll->data.ptr))->fd, NULL);
     loop->num_polls--;
-    free(((struct poll_data*) (poll->data.ptr))->buff);
     free(poll->data.ptr);
 }
