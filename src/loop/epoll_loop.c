@@ -43,7 +43,7 @@ void run_loop(struct epoll_loop* loop) {
                         remove_poll(loop, &poll);
                         printf("A client left\n");
                     } else {
-                        printf(data->buff + data->last_buff_size);
+                        //printf(data->buff + data->last_buff_size);
                     }
                 }
             }
@@ -58,12 +58,30 @@ struct epoll_event create_poll(int fd, int type) {
     struct poll_data* pd = (struct poll_data*) malloc(sizeof(struct poll_data));
     pd->fd = fd;
     pd->type = type;
-    pd->buff = NULL;
+    //pd->buff = NULL;
     pd->buff_size = 0;
     pd->last_buff_size = 0;
 
     poll.data.ptr = pd;
     return poll;
+}
+int read_poll(struct epoll_loop* loop, struct epoll_event* poll) { // Read incoming data
+    char recv_buff[1024];
+    struct poll_data* data = poll->data.ptr;
+
+    int recv_size = recv(data->fd, recv_buff, sizeof(recv_buff), 0); // Recv data in recv_buff and set size in recv_size
+    if (loop->buff) { 
+        if (recv_size < 4096) {
+            memcpy(loop->buff + data->buff_size, recv_buff, recv_size); // Copy incoming data to poll_data buffer
+        }
+        loop->buff = realloc(loop->buff, data->buff_size + recv_size + 1); // Reallocate buffer for insert incoming data
+    } else {
+        loop->buff = malloc(4096); // First malloc
+    }
+    //data->buff[data->buff_size + recv_size] = 0;
+    data->last_buff_size = data->buff_size;
+    data->buff_size += recv_size;
+    return recv_size; 
 }
 
 void add_poll(struct epoll_loop* loop, struct epoll_event* poll) {

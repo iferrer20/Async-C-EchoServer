@@ -12,7 +12,7 @@ DEP_FILES := $(patsubst $(SRC_DIR)%.c,$(OBJ_DIR)%.d,$(SRC_FILES))
 CFLAGS += -O2 -Wall
 
 # link options
-LDFLAGS += -l ssl -lpthread
+LDFLAGS += -lpthread
 
 all: $(TARGET)
 segf: CFLAGS += -Og -g -fsanitize=address
