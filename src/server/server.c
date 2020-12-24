@@ -5,7 +5,8 @@
 #include <arpa/inet.h>
 
 #include "server.h"
-#include "../loop/epoll_loop.h"
+#include "../eventing/poll.h"
+#include "../eventing/epoll_loop.h"
 #include "../net/networking.h"
 
 struct server* create_server(struct server_config* sv_conf) {
@@ -45,8 +46,9 @@ int run_server(struct server* sv) {
         return 1;
     }
     loop->sv = sv;
-    struct epoll_event new_poll = create_poll(sv->fd, POLL_BIND);
-    add_poll(loop, &new_poll);
+    struct epoll_event new_poll = create_poll(sv->fd, POLL_LISTEN);
+    add_poll(loop->epoll, &new_poll);
+    loop->num_polls++;
     run_loop(loop);
     return 0;
 }
