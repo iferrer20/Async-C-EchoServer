@@ -10,19 +10,24 @@ struct epoll_event create_poll(int fd, int type) {
     struct poll_data* pd = (struct poll_data*) malloc(sizeof(struct poll_data));
     pd->fd = fd;
     pd->type = type;
-    pd->buff_size = 0;
-    pd->last_buff_size = 0;
+    pd->read_buff_size = 0;
+    pd->write_buff_size = 0;
 
     poll.data.ptr = pd;
     return poll;
 }
-int read_poll(struct epoll_event* poll, char* buff) { 
+int read_poll(struct epoll_event* poll, char* buff) {
     struct poll_data* data = poll->data.ptr;
     int read_size = read(data->fd, buff, 65536); // Read data in recv_buff and set size in recv_size
     buff[read_size] = 0;
-    data->last_buff_size = data->buff_size;
-    data->buff_size += read_size;
+    data->read_buff_size += read_size;
     return read_size; 
+}
+int write_poll(struct epoll_event* poll, char* buff) {
+    struct poll_data* data = poll->data.ptr;
+    int write_size = write(data->fd, buff, 65536);
+    data->write_buff_size = write_size;
+    return write_size;
 }
 int get_poll_fd(struct epoll_event* poll) {
     return ((struct poll_data*) (poll->data.ptr))->fd;

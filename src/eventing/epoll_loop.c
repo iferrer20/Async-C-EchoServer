@@ -14,11 +14,14 @@ struct epoll_loop* create_loop() {
     loop->num_ready_polls = 0;
     loop->current_ready_poll = 0;
     loop->epoll = epoll_create1(0);
-    loop->buff = malloc(65536 + 1); 
+    loop->read_buff = malloc(65536 + 1); 
+    loop->write_buff = malloc(65536 + 1);
 
     return loop;
 }
-
+void set_read_buffer(struct epoll_loop* loop, char* buff) {
+    loop->read_buff = buff;
+}
 void run_loop(struct epoll_loop* loop) {
     while (!loop->stop) {
         loop->num_ready_polls = epoll_wait(loop->epoll, loop->ready_polls, 1024, -1);
@@ -29,7 +32,7 @@ void run_loop(struct epoll_loop* loop) {
             int type = data->type;
             
             switch (type) {
-                case POLL_LISTEN:
+                case POLL_LISTEN: {
                     if (events & EPOLLIN) {
                         struct sockaddr_in clientaddr;
                         int conn_fd = accept_conn(data->fd, &clientaddr); 
@@ -38,17 +41,21 @@ void run_loop(struct epoll_loop* loop) {
                         loop->num_polls++;
                     }
                     break;
-                case POLL_CONN:
+                } case POLL_CONN: {
                     if (events & EPOLLIN) {
-                        if (read_poll(poll, loop->buff)) { 
-                            printf(loop->buff);
+                        if (read_poll(poll, loop->read_buff)) { 
+                            printf(loop->read_buff);
                         } else { // If read_poll returns 0 close connection
-                             close(data->fd);
-                             remove_poll(loop->epoll, poll);
-                             loop->num_polls--;
+                            close(data->fd);
+                            remove_poll(loop->epoll, poll);
+                            loop->num_polls--;
                         }
                     }
+                    if (events & EPOLLOUT) {
+                        
+                    }
                     break;
+                }
             }
         }
     }

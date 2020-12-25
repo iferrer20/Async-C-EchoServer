@@ -11,9 +11,8 @@ struct epoll_loop {
     int current_ready_poll;
     int epoll;
     struct epoll_event ready_polls[1024];
-    char* buff;
-    struct server* sv;
-    char* recv_buffer;
+    char* read_buff;
+    char* write_buff;
 };
 
 struct epoll_loop* create_loop();
