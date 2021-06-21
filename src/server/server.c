@@ -23,7 +23,6 @@ int run_server(struct server* sv) {
     if ((sv->fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { 
         perror("socket failed"); 
         return 1;
-        
     }
     // Forcefully attaching socket to the port 8080 
     if (setsockopt(sv->fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
@@ -45,9 +44,9 @@ int run_server(struct server* sv) {
         perror("listen"); 
         return 1;
     }
-    loop->sv = sv;
-    struct epoll_event new_poll = create_poll(sv->fd, POLL_LISTEN);
+    struct epoll_event new_poll = create_poll(sv->fd);
     add_poll(loop->epoll, &new_poll);
+    loop->sv = sv;
     loop->num_polls++;
     run_loop(loop);
     return 0;

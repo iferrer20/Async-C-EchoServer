@@ -1,20 +1,16 @@
 #pragma once
 #include <sys/epoll.h>
 
-#define POLL_LISTEN 0
-#define POLL_CONN 1
-
 struct poll_data {
-    int type;
     int fd;
-    uint64_t read_buff_size;
-    uint64_t write_buff_size;
+    uint64_t read_buff_pos;
+    uint64_t write_buff_pos;
 };
 
-struct epoll_event create_poll(int fd, int type);
+struct epoll_event create_poll(int fd);
 int get_poll_fd(struct epoll_event* poll);
 void add_poll(int epoll, struct epoll_event* poll);
 int read_poll(struct epoll_event* poll, char* buff);
-int write_poll(struct epoll_event* poll, char* buff);
+int write_poll(struct epoll_event* poll, char* buff, int size);
 void remove_poll(int epoll, struct epoll_event* poll);
 void poll_events(struct epoll_event* poll);

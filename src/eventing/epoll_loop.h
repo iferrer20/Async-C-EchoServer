@@ -3,6 +3,7 @@
 
 #include "../server/server.h"
 
+#define MAX_EVENTS 1024
 
 struct epoll_loop {
     char stop;
@@ -10,7 +11,8 @@ struct epoll_loop {
     int num_ready_polls;
     int current_ready_poll;
     int epoll;
-    struct epoll_event ready_polls[1024];
+    struct server* sv;
+    struct epoll_event ready_polls[MAX_EVENTS];
     char* read_buff;
     char* write_buff;
 };

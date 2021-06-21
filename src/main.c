@@ -1,8 +1,6 @@
 #include <stdio.h> 
 #include "server/server.h"
 
-
-
 int main() {
     struct server_config sv_conf;
     sv_conf.listen_addr = "0.0.0.0";
